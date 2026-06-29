@@ -1,0 +1,8 @@
+{
+  "name": "physioguide",
+  "version": "1.0.0",
+  "description": "AI-powered physiotherapy exercise repository",
+  "engines": {
+    "node": ">=18"
+  }
+}

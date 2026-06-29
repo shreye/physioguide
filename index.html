@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhysioGuide — AI Exercise Repository</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#F5F0E8;--cream-dark:#EAE3D5;--ink:#1C1917;--ink-soft:#44403C;--ink-muted:#78716C;
+  --teal:#0D9488;--teal-light:#CCFBF1;--teal-mid:#5EEAD4;
+  --amber-light:#FEF3C7;--red-soft:#FEE2E2;--red:#DC2626;
+  --white:#FFFFFF;--border:rgba(28,25,23,0.1);--border-strong:rgba(28,25,23,0.2);
+  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,0.06);--shadow-md:0 4px 12px rgba(0,0,0,0.08);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+.header{background:var(--ink);padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;letter-spacing:-0.01em}
+.logo span{color:var(--teal-mid)}
+.header-tag{font-size:11px;color:#666;background:rgba(255,255,255,0.08);padding:4px 10px;border-radius:20px;letter-spacing:0.04em;text-transform:uppercase}
+.hero{background:var(--ink);padding:3rem 2rem 4rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(13,148,136,0.15) 0%,transparent 70%);pointer-events:none}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(32px,5vw,52px);color:#fff;line-height:1.15;margin-bottom:1rem;position:relative}
+.hero h1 em{color:var(--teal-mid);font-style:italic}
+.hero p{font-size:15px;color:rgba(255,255,255,0.55);max-width:480px;margin:0 auto 2rem;line-height:1.7}
+.disclaimer{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.06);padding:6px 14px;border-radius:20px}
+.main{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.assessment-card{background:var(--white);border-radius:16px;border:0.5px solid var(--border);box-shadow:var(--shadow-md);overflow:hidden;margin-bottom:2rem}
+.ac-header{background:var(--ink);padding:1.25rem 1.75rem;display:flex;align-items:center;gap:10px}
+.ac-header h2{font-family:'DM Serif Display',serif;font-size:18px;color:#fff;font-weight:400}
+.step-badge{background:var(--teal);color:#fff;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
+.ac-body{padding:1.75rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:500;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.05em}
+.field select,.field input{padding:9px 12px;border:0.5px solid var(--border-strong);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--cream);outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;width:100%}
+.field select:focus,.field input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,0.12);background:var(--white)}
+.section-label{font-size:11px;font-weight:500;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.05em;margin:1.25rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:0.5px solid var(--border)}
+.chip-group{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{padding:6px 14px;border:0.5px solid var(--border-strong);border-radius:20px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink-soft);background:var(--cream);cursor:pointer;transition:all 0.15s;user-select:none}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.active{background:var(--teal-light);border-color:var(--teal);color:var(--teal);font-weight:500}
+.pain-scale{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.pain-dot{width:32px;height:32px;border-radius:50%;border:0.5px solid var(--border-strong);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;color:var(--ink-muted);background:var(--cream)}
+.pain-dot:hover{transform:scale(1.1)}
+.pain-dot.active{color:white;border-color:transparent;transform:scale(1.15)}
+.pain-dot[data-v="1"].active,.pain-dot[data-v="2"].active,.pain-dot[data-v="3"].active{background:#16a34a}
+.pain-dot[data-v="4"].active,.pain-dot[data-v="5"].active,.pain-dot[data-v="6"].active{background:#d97706}
+.pain-dot[data-v="7"].active,.pain-dot[data-v="8"].active,.pain-dot[data-v="9"].active,.pain-dot[data-v="10"].active{background:#dc2626}
+.pain-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-muted);margin-bottom:10px}
+.generate-btn{width:100%;padding:14px;background:var(--teal);color:white;border:none;border-radius:var(--radius);font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:1.5rem;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.generate-btn:hover{background:#0f766e}
+.generate-btn:disabled{opacity:0.5;cursor:not-allowed}
+.divider{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0}
+.loading-state{display:none;text-align:center;padding:3rem}
+.loading-state.visible{display:block}
+.spinner{width:36px;height:36px;border:2.5px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-size:14px;color:var(--ink-muted)}
+.error-state{display:none;background:var(--red-soft);border-radius:var(--radius);padding:1rem 1.25rem;font-size:13px;color:var(--red);margin-top:1rem}
+.error-state.visible{display:block}
+.results-area{display:none}
+.results-area.visible{display:block}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.results-title{font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)}
+.reset-btn{font-size:12px;color:var(--ink-muted);background:none;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.reset-btn:hover{color:var(--ink);border-color:var(--ink)}
+.safety-banner{background:var(--amber-light);border:0.5px solid #FCD34D;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#92400E;margin-bottom:1.25rem;line-height:1.6}
+.exercise-grid{display:flex;flex-direction:column;gap:14px}
+.exercise-card{background:var(--white);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.ex-header{display:flex;align-items:flex-start;gap:14px;padding:1.25rem 1.5rem;cursor:pointer}
+.ex-num{width:32px;height:32px;border-radius:50%;background:var(--teal-light);color:var(--teal);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ex-info{flex:1}
+.ex-name{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);font-weight:400;margin-bottom:4px}
+.ex-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ex-tag{font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.04em}
+.tag-sets{background:var(--teal-light);color:var(--teal)}
+.tag-reps{background:#EDE9FE;color:#5B21B6}
+.tag-level{background:var(--cream-dark);color:var(--ink-soft)}
+.ex-toggle{color:var(--ink-muted);font-size:18px;transition:transform 0.2s;flex-shrink:0}
+.ex-toggle.open{transform:rotate(180deg)}
+.ex-body{display:none;padding:0 1.5rem 1.5rem}
+.ex-body.open{display:block}
+.ex-divider{border:none;border-top:0.5px solid var(--border);margin-bottom:1.25rem}
+.steps-list{display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem}
+.step-item{display:flex;gap:12px;align-items:flex-start}
+.step-n{width:22px;height:22px;border:1.5px solid var(--teal);border-radius:50%;font-size:11px;font-weight:500;color:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-text{font-size:13px;color:var(--ink-soft);line-height:1.6}
+.ex-tips{background:var(--cream);border-radius:var(--radius);padding:12px 14px}
+.ex-tips-title{font-size:11px;font-weight:500;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px}
+.ex-tips-body{font-size:12px;color:var(--ink-soft);line-height:1.7}
+@media(max-width:560px){
+  .form-grid,.form-grid-3{grid-template-columns:1fr}
+  .hero{padding:2rem 1rem 3rem}
+  .main{padding:1.25rem 1rem 3rem}
+  .ac-body{padding:1.25rem}
+  .ex-header{padding:1rem 1.25rem}
+  .ex-body{padding:0 1.25rem 1.25rem}
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">Physio<span>Guide</span></div>
+  <div class="header-tag">AI-Powered</div>
+</header>
+<div class="hero">
+  <h1>Find exercises <em>built<br>for your pain</em></h1>
+  <p>Tell us about your condition and we'll build a personalised physiotherapy exercise plan, step by step.</p>
+  <div class="disclaimer">⚠ Not a substitute for professional medical advice</div>
+</div>
+<div class="main">
+  <div class="assessment-card" id="form-card">
+    <div class="ac-header">
+      <div class="step-badge">Assessment</div>
+      <h2>Tell us about your condition</h2>
+    </div>
+    <div class="ac-body">
+      <div class="section-label">About you</div>
+      <div class="form-grid-3">
+        <div class="field"><label>Age</label><input type="number" id="age" min="10" max="100" placeholder="e.g. 35"></div>
+        <div class="field"><label>Fitness level</label><select id="fitness"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option></select></div>
+        <div class="field"><label>Occupation</label><select id="occupation"><option value="desk worker">Desk worker</option><option value="manual labourer">Manual labourer</option><option value="athlete">Athlete</option><option value="student">Student</option><option value="retired">Retired</option><option value="other">Other</option></select></div>
+      </div>
+      <div class="section-label">Your condition</div>
+      <div class="form-grid">
+        <div class="field"><label>Primary condition</label>
+          <select id="condition">
+            <option value="">Select condition…</option>
+            <optgroup label="Neck and upper body"><option>Neck pain</option><option>Upper back pain</option><option>Shoulder pain</option><option>Rotator cuff injury</option></optgroup>
+            <optgroup label="Back"><option>Lower back pain</option><option>Sciatica</option><option>Herniated disc</option><option>General back pain</option></optgroup>
+            <optgroup label="Elbow and forearm"><option>Tennis elbow (lateral epicondylitis)</option><option>Golfer's elbow (medial epicondylitis)</option><option>Forearm pain</option></optgroup>
+            <optgroup label="Wrist and hand"><option>Wrist tendinitis</option><option>Carpal tunnel syndrome</option><option>De Quervain's tenosynovitis</option></optgroup>
+            <optgroup label="Hip and knee"><option>Hip pain</option><option>IT band syndrome</option><option>Knee pain</option><option>Patellofemoral syndrome</option></optgroup>
+            <optgroup label="Ankle and foot"><option>Ankle sprain</option><option>Plantar fasciitis</option><option>Achilles tendinitis</option></optgroup>
+            <optgroup label="General"><option>Tendinitis (general)</option><option>Post-surgery rehab</option><option>Muscle strain</option><option>Postural pain</option></optgroup>
+          </select>
+        </div>
+        <div class="field"><label>How long have you had this?</label>
+          <select id="duration"><option value="acute (less than 2 weeks)">Less than 2 weeks (acute)</option><option value="subacute (2–6 weeks)">2–6 weeks (subacute)</option><option value="chronic (3+ months)">3+ months (chronic)</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Affected side</label><select id="side"><option>Left</option><option>Right</option><option>Both sides</option><option>Central / not applicable</option></select></div>
+        <div class="field"><label>Surgery or injury history</label><select id="surgery"><option value="none">None</option><option value="prior injury, no surgery">Prior injury, no surgery</option><option value="post-surgery rehab">Post-surgery</option></select></div>
+      </div>
+      <div class="section-label">Pain details</div>
+      <div style="margin-bottom:6px;font-size:12px;color:var(--ink-muted)">Pain severity (1 = mild, 10 = severe)</div>
+      <div class="pain-scale" id="pain-scale">
+        <div class="pain-dot" data-v="1" onclick="setPain(1)">1</div><div class="pain-dot" data-v="2" onclick="setPain(2)">2</div><div class="pain-dot" data-v="3" onclick="setPain(3)">3</div><div class="pain-dot" data-v="4" onclick="setPain(4)">4</div><div class="pain-dot" data-v="5" onclick="setPain(5)">5</div><div class="pain-dot" data-v="6" onclick="setPain(6)">6</div><div class="pain-dot" data-v="7" onclick="setPain(7)">7</div><div class="pain-dot" data-v="8" onclick="setPain(8)">8</div><div class="pain-dot" data-v="9" onclick="setPain(9)">9</div><div class="pain-dot" data-v="10" onclick="setPain(10)">10</div>
+      </div>
+      <div class="pain-labels"><span>Mild</span><span>Moderate</span><span>Severe</span></div>
+      <div style="margin-bottom:6px;font-size:12px;color:var(--ink-muted)">Pain type (select all that apply)</div>
+      <div class="chip-group" id="pain-type-group">
+        <div class="chip" onclick="toggleChip(this)">Dull ache</div><div class="chip" onclick="toggleChip(this)">Sharp</div><div class="chip" onclick="toggleChip(this)">Burning</div><div class="chip" onclick="toggleChip(this)">Stiffness</div><div class="chip" onclick="toggleChip(this)">Tingling / numbness</div><div class="chip" onclick="toggleChip(this)">Throbbing</div><div class="chip" onclick="toggleChip(this)">Weakness</div>
+      </div>
+      <div style="margin-bottom:6px;font-size:12px;color:var(--ink-muted)">When is it worst?</div>
+      <div class="chip-group" id="when-group">
+        <div class="chip" onclick="toggleChip(this)">In the morning</div><div class="chip" onclick="toggleChip(this)">End of day</div><div class="chip" onclick="toggleChip(this)">During activity</div><div class="chip" onclick="toggleChip(this)">At rest</div><div class="chip" onclick="toggleChip(this)">After sitting long</div><div class="chip" onclick="toggleChip(this)">At night</div>
+      </div>
+      <div class="section-label">Exercise context</div>
+      <div class="form-grid-3">
+        <div class="field"><label>Time available</label><select id="time"><option value="5–10 minutes">5–10 min</option><option value="15–20 minutes" selected>15–20 min</option><option value="30+ minutes">30+ min</option></select></div>
+        <div class="field"><label>Equipment</label><select id="equipment"><option value="no equipment (bodyweight only)">None (bodyweight)</option><option value="resistance bands">Resistance bands</option><option value="foam roller">Foam roller</option><option value="light dumbbells">Light dumbbells</option><option value="full gym">Full gym</option></select></div>
+        <div class="field"><label>Primary goal</label><select id="goal"><option value="pain relief">Pain relief</option><option value="restore mobility">Restore mobility</option><option value="strengthening">Strengthen</option><option value="return to sport">Return to sport</option></select></div>
+      </div>
+      <button class="generate-btn" id="generate-btn" onclick="generatePlan()">Generate my exercise plan ↗</button>
+      <div class="error-state" id="error-state"></div>
+    </div>
+  </div>
+  <div class="loading-state" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-msg" id="loading-msg">Analysing your condition…</div>
+  </div>
+  <div class="results-area" id="results-area">
+    <div class="results-header">
+      <div class="results-title" id="results-title">Your exercise plan</div>
+      <button class="reset-btn" onclick="resetForm()">← Start over</button>
+    </div>
+    <div class="safety-banner" id="safety-banner"></div>
+    <div class="exercise-grid" id="exercise-grid"></div>
+  </div>
+</div>
+<script>
+let painLevel = 0;
+function setPain(v){painLevel=v;document.querySelectorAll('.pain-dot').forEach(d=>d.classList.toggle('active',parseInt(d.dataset.v)===v))}
+function toggleChip(el){el.classList.toggle('active')}
+function getChips(id){return Array.from(document.querySelectorAll(`#${id} .chip.active`)).map(c=>c.textContent).join(', ')||'not specified'}
+function resetForm(){document.getElementById('results-area').classList.remove('visible');document.getElementById('form-card').style.display='block';document.getElementById('error-state').classList.remove('visible');document.getElementById('exercise-grid').innerHTML='';window.scrollTo({top:0,behavior:'smooth'})}
+async function generatePlan(){
+  const condition=document.getElementById('condition').value;
+  if(!condition){alert('Please select a condition first.');return}
+  if(!painLevel){alert('Please select your pain severity.');return}
+  const age=document.getElementById('age').value||'not specified';
+  const fitness=document.getElementById('fitness').value;
+  const occupation=document.getElementById('occupation').value;
+  const duration=document.getElementById('duration').value;
+  const side=document.getElementById('side').value;
+  const surgery=document.getElementById('surgery').value;
+  const painTypes=getChips('pain-type-group');
+  const whenWorst=getChips('when-group');
+  const time=document.getElementById('time').value;
+  const equipment=document.getElementById('equipment').value;
+  const goal=document.getElementById('goal').value;
+  document.getElementById('form-card').style.display='none';
+  document.getElementById('loading').classList.add('visible');
+  document.getElementById('error-state').classList.remove('visible');
+  const msgs=['Analysing your condition…','Building your personalised plan…','Selecting the safest exercises…','Almost ready…'];
+  let mi=0;
+  const msgEl=document.getElementById('loading-msg');
+  const iv=setInterval(()=>{mi=(mi+1)%msgs.length;msgEl.textContent=msgs[mi]},1800);
+  const prompt=`You are a senior physiotherapist. Return ONLY valid JSON, no markdown.
+
+Patient: Age ${age}, ${fitness} fitness, ${occupation}.
+Condition: ${condition} (${side}), ${duration}.
+Surgery: ${surgery}. Pain: ${painLevel}/10, type: ${painTypes}, worst when: ${whenWorst}.
+Time: ${time}. Equipment: ${equipment}. Goal: ${goal}.
+
+Rules: pain 7+ = gentle/isometric only. Acute = no loading. Chronic = progressive.
+
+Return: {"safetyNote":"one sentence","planTitle":"short title","exercises":[{"name":"","sets":"","reps":"","level":"Gentle|Moderate|Strengthening","steps":["","","",""],"tips":"2 sentences"}]}
+
+Include 4-5 exercises.`;
+  try{
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    clearInterval(iv);
+    document.getElementById('loading').classList.remove('visible');
+    const text=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const plan=JSON.parse(text);
+    document.getElementById('results-title').textContent=plan.planTitle||'Your exercise plan';
+    document.getElementById('safety-banner').textContent='⚠ '+plan.safetyNote;
+    const grid=document.getElementById('exercise-grid');
+    grid.innerHTML='';
+    plan.exercises.forEach((ex,i)=>{
+      const card=document.createElement('div');
+      card.className='exercise-card';
+      const stepsHTML=ex.steps.map((s,si)=>`<div class="step-item"><div class="step-n">${si+1}</div><div class="step-text">${s}</div></div>`).join('');
+      card.innerHTML=`<div class="ex-header" onclick="toggleEx(this)"><div class="ex-num">${i+1}</div><div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-tags"><span class="ex-tag tag-sets">${ex.sets}</span><span class="ex-tag tag-reps">${ex.reps}</span><span class="ex-tag tag-level">${ex.level}</span></div></div><div class="ex-toggle ${i===0?'open':''}">▾</div></div><div class="ex-body ${i===0?'open':''}"><hr class="ex-divider"><div class="steps-list">${stepsHTML}</div><div class="ex-tips"><div class="ex-tips-title">Tips and precautions</div><div class="ex-tips-body">${ex.tips}</div></div></div>`;
+      grid.appendChild(card);
+    });
+    document.getElementById('results-area').classList.add('visible');
+    document.getElementById('results-area').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    clearInterval(iv);
+    document.getElementById('loading').classList.remove('visible');
+    document.getElementById('form-card').style.display='block';
+    const errEl=document.getElementById('error-state');
+    errEl.textContent='Something went wrong generating your plan. Please try again.';
+    errEl.classList.add('visible');
+  }
+}
+function toggleEx(header){const body=header.nextElementSibling;const toggle=header.querySelector('.ex-toggle');body.classList.toggle('open');toggle.classList.toggle('open')}
+</script>
+</body>
+</html>
