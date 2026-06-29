@@ -63,10 +63,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 .error-state.visible{display:block}
 .results-area{display:none}
 .results-area.visible{display:block}
-.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px}
 .results-title{font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)}
+.results-actions{display:flex;gap:8px;align-items:center}
 .reset-btn{font-size:12px;color:var(--ink-muted);background:none;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif}
 .reset-btn:hover{color:var(--ink);border-color:var(--ink)}
+.pdf-btn{font-size:12px;color:white;background:var(--ink);border:none;border-radius:var(--radius);padding:7px 14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;display:flex;align-items:center;gap:6px;transition:background 0.15s}
+.pdf-btn:hover{background:#44403C}
+.pdf-btn:disabled{opacity:0.5;cursor:not-allowed}
 .safety-banner{background:var(--amber-light);border:0.5px solid #FCD34D;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#92400E;margin-bottom:1.25rem;line-height:1.6}
 .exercise-grid{display:flex;flex-direction:column;gap:14px}
 .exercise-card{background:var(--white);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
@@ -177,70 +181,100 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
   <div class="results-area" id="results-area">
     <div class="results-header">
       <div class="results-title" id="results-title">Your exercise plan</div>
-      <button class="reset-btn" onclick="resetForm()">← Start over</button>
+      <div class="results-actions">
+        <button class="pdf-btn" id="pdf-btn" onclick="downloadPDF()">⬇ Download PDF</button>
+        <button class="reset-btn" onclick="resetForm()">← Start over</button>
+      </div>
     </div>
     <div class="safety-banner" id="safety-banner"></div>
     <div class="exercise-grid" id="exercise-grid"></div>
   </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 let painLevel = 0;
+let currentPlan = null;
+let currentProfile = {};
+
 function setPain(v){painLevel=v;document.querySelectorAll('.pain-dot').forEach(d=>d.classList.toggle('active',parseInt(d.dataset.v)===v))}
 function toggleChip(el){el.classList.toggle('active')}
 function getChips(id){return Array.from(document.querySelectorAll(`#${id} .chip.active`)).map(c=>c.textContent).join(', ')||'not specified'}
-function resetForm(){document.getElementById('results-area').classList.remove('visible');document.getElementById('form-card').style.display='block';document.getElementById('error-state').classList.remove('visible');document.getElementById('exercise-grid').innerHTML='';window.scrollTo({top:0,behavior:'smooth'})}
+
+function resetForm(){
+  document.getElementById('results-area').classList.remove('visible');
+  document.getElementById('form-card').style.display='block';
+  document.getElementById('error-state').classList.remove('visible');
+  document.getElementById('exercise-grid').innerHTML='';
+  currentPlan=null;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 async function generatePlan(){
   const condition=document.getElementById('condition').value;
   if(!condition){alert('Please select a condition first.');return}
   if(!painLevel){alert('Please select your pain severity.');return}
-  const age=document.getElementById('age').value||'not specified';
-  const fitness=document.getElementById('fitness').value;
-  const occupation=document.getElementById('occupation').value;
-  const duration=document.getElementById('duration').value;
-  const side=document.getElementById('side').value;
-  const surgery=document.getElementById('surgery').value;
-  const painTypes=getChips('pain-type-group');
-  const whenWorst=getChips('when-group');
-  const time=document.getElementById('time').value;
-  const equipment=document.getElementById('equipment').value;
-  const goal=document.getElementById('goal').value;
+
+  currentProfile={
+    age: document.getElementById('age').value||'not specified',
+    fitness: document.getElementById('fitness').value,
+    occupation: document.getElementById('occupation').value,
+    condition,
+    duration: document.getElementById('duration').value,
+    side: document.getElementById('side').value,
+    surgery: document.getElementById('surgery').value,
+    painLevel,
+    painTypes: getChips('pain-type-group'),
+    whenWorst: getChips('when-group'),
+    time: document.getElementById('time').value,
+    equipment: document.getElementById('equipment').value,
+    goal: document.getElementById('goal').value
+  };
+
   document.getElementById('form-card').style.display='none';
   document.getElementById('loading').classList.add('visible');
   document.getElementById('error-state').classList.remove('visible');
+
   const msgs=['Analysing your condition…','Building your personalised plan…','Selecting the safest exercises…','Almost ready…'];
   let mi=0;
   const msgEl=document.getElementById('loading-msg');
   const iv=setInterval(()=>{mi=(mi+1)%msgs.length;msgEl.textContent=msgs[mi]},1800);
+
   const prompt=`You are a senior physiotherapist. Return ONLY valid JSON, no markdown.
 
-Patient: Age ${age}, ${fitness} fitness, ${occupation}.
-Condition: ${condition} (${side}), ${duration}.
-Surgery: ${surgery}. Pain: ${painLevel}/10, type: ${painTypes}, worst when: ${whenWorst}.
-Time: ${time}. Equipment: ${equipment}. Goal: ${goal}.
+Patient: Age ${currentProfile.age}, ${currentProfile.fitness} fitness, ${currentProfile.occupation}.
+Condition: ${currentProfile.condition} (${currentProfile.side}), ${currentProfile.duration}.
+Surgery: ${currentProfile.surgery}. Pain: ${currentProfile.painLevel}/10, type: ${currentProfile.painTypes}, worst when: ${currentProfile.whenWorst}.
+Time: ${currentProfile.time}. Equipment: ${currentProfile.equipment}. Goal: ${currentProfile.goal}.
 
 Rules: pain 7+ = gentle/isometric only. Acute = no loading. Chronic = progressive.
 
 Return: {"safetyNote":"one sentence","planTitle":"short title","exercises":[{"name":"","sets":"","reps":"","level":"Gentle|Moderate|Strengthening","steps":["","","",""],"tips":"2 sentences"}]}
 
 Include 4-5 exercises.`;
+
   try{
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
     clearInterval(iv);
     document.getElementById('loading').classList.remove('visible');
+
     const text=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
-    const plan=JSON.parse(text);
-    document.getElementById('results-title').textContent=plan.planTitle||'Your exercise plan';
-    document.getElementById('safety-banner').textContent='⚠ '+plan.safetyNote;
+    currentPlan=JSON.parse(text);
+
+    document.getElementById('results-title').textContent=currentPlan.planTitle||'Your exercise plan';
+    document.getElementById('safety-banner').textContent='⚠ '+currentPlan.safetyNote;
+
     const grid=document.getElementById('exercise-grid');
     grid.innerHTML='';
-    plan.exercises.forEach((ex,i)=>{
+    currentPlan.exercises.forEach((ex,i)=>{
       const card=document.createElement('div');
       card.className='exercise-card';
       const stepsHTML=ex.steps.map((s,si)=>`<div class="step-item"><div class="step-n">${si+1}</div><div class="step-text">${s}</div></div>`).join('');
       card.innerHTML=`<div class="ex-header" onclick="toggleEx(this)"><div class="ex-num">${i+1}</div><div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-tags"><span class="ex-tag tag-sets">${ex.sets}</span><span class="ex-tag tag-reps">${ex.reps}</span><span class="ex-tag tag-level">${ex.level}</span></div></div><div class="ex-toggle ${i===0?'open':''}">▾</div></div><div class="ex-body ${i===0?'open':''}"><hr class="ex-divider"><div class="steps-list">${stepsHTML}</div><div class="ex-tips"><div class="ex-tips-title">Tips and precautions</div><div class="ex-tips-body">${ex.tips}</div></div></div>`;
       grid.appendChild(card);
     });
+
     document.getElementById('results-area').classList.add('visible');
     document.getElementById('results-area').scrollIntoView({behavior:'smooth',block:'start'});
   }catch(err){
@@ -252,7 +286,164 @@ Include 4-5 exercises.`;
     errEl.classList.add('visible');
   }
 }
+
 function toggleEx(header){const body=header.nextElementSibling;const toggle=header.querySelector('.ex-toggle');body.classList.toggle('open');toggle.classList.toggle('open')}
+
+function downloadPDF(){
+  if(!currentPlan) return;
+  const btn=document.getElementById('pdf-btn');
+  btn.disabled=true;
+  btn.textContent='Generating…';
+
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageW=210;
+    const margin=18;
+    const contentW=pageW-(margin*2);
+    let y=20;
+
+    const checkPage=(needed=10)=>{
+      if(y+needed>275){doc.addPage();y=20;}
+    };
+
+    // Header bar
+    doc.setFillColor(28,25,23);
+    doc.rect(0,0,210,18,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica','bold');
+    doc.text('PhysioGuide',margin,12);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(150,150,150);
+    doc.text('AI-Powered Exercise Plan',margin+42,12);
+    doc.text(new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),pageW-margin,12,{align:'right'});
+
+    y=28;
+
+    // Plan title
+    doc.setTextColor(28,25,23);
+    doc.setFontSize(20);
+    doc.setFont('helvetica','bold');
+    doc.text(currentPlan.planTitle||'Your Exercise Plan',margin,y);
+    y+=8;
+
+    // Thin teal line
+    doc.setDrawColor(13,148,136);
+    doc.setLineWidth(0.8);
+    doc.line(margin,y,pageW-margin,y);
+    y+=6;
+
+    // Patient summary box
+    doc.setFillColor(245,240,232);
+    doc.setDrawColor(220,210,195);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin,y,contentW,22,2,2,'FD');
+    doc.setFontSize(8);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(120,113,108);
+    doc.text('PATIENT PROFILE',margin+4,y+6);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(44,40,36);
+    doc.setFontSize(9);
+    const profileLine1=`Condition: ${currentProfile.condition} (${currentProfile.side})  |  Duration: ${currentProfile.duration}  |  Pain: ${currentProfile.painLevel}/10`;
+    const profileLine2=`Goal: ${currentProfile.goal}  |  Equipment: ${currentProfile.equipment}  |  Time: ${currentProfile.time}`;
+    doc.text(profileLine1,margin+4,y+12);
+    doc.text(profileLine2,margin+4,y+18);
+    y+=28;
+
+    // Safety note
+    doc.setFillColor(254,243,199);
+    doc.setDrawColor(252,211,77);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin,y,contentW,12,2,2,'FD');
+    doc.setFontSize(8);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(146,64,14);
+    doc.text('⚠  SAFETY NOTE',margin+4,y+5);
+    doc.setFont('helvetica','normal');
+    const safetyLines=doc.splitTextToSize(currentPlan.safetyNote,contentW-20);
+    doc.text(safetyLines[0]||'',margin+38,y+5);
+    doc.setTextColor(28,25,23);
+    y+=18;
+
+    // Exercises
+    currentPlan.exercises.forEach((ex,i)=>{
+      checkPage(30);
+
+      // Exercise header
+      doc.setFillColor(28,25,23);
+      doc.roundedRect(margin,y,contentW,12,2,2,'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(10);
+      doc.setFont('helvetica','bold');
+      doc.text(`${i+1}.  ${ex.name}`,margin+4,y+8);
+
+      // Tags on the right
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(13,148,136);
+      const tagText=`${ex.sets}  ·  ${ex.reps}  ·  ${ex.level}`;
+      doc.text(tagText,pageW-margin-2,y+8,{align:'right'});
+      y+=16;
+
+      // Steps
+      doc.setTextColor(44,40,36);
+      ex.steps.forEach((step,si)=>{
+        checkPage(10);
+        const lines=doc.splitTextToSize(step,contentW-12);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(13,148,136);
+        doc.text(`${si+1}`,margin+2,y+4);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(44,40,36);
+        doc.text(lines,margin+8,y+4);
+        y+=lines.length*5+2;
+      });
+
+      // Tips box
+      checkPage(14);
+      doc.setFillColor(245,240,232);
+      doc.setDrawColor(220,210,195);
+      doc.setLineWidth(0.3);
+      const tipLines=doc.splitTextToSize(ex.tips,contentW-10);
+      const tipBoxH=tipLines.length*4.5+8;
+      doc.roundedRect(margin,y,contentW,tipBoxH,2,2,'FD');
+      doc.setFontSize(7);
+      doc.setFont('helvetica','bold');
+      doc.setTextColor(120,113,108);
+      doc.text('TIPS & PRECAUTIONS',margin+4,y+5);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(68,64,60);
+      doc.setFontSize(8);
+      doc.text(tipLines,margin+4,y+10);
+      y+=tipBoxH+8;
+    });
+
+    // Footer on every page
+    const pageCount=doc.internal.getNumberOfPages();
+    for(let p=1;p<=pageCount;p++){
+      doc.setPage(p);
+      doc.setFillColor(245,240,232);
+      doc.rect(0,285,210,12,'F');
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(120,113,108);
+      doc.text('PhysioGuide — AI-generated exercise plan. Not a substitute for professional medical advice.',margin,291);
+      doc.text(`Page ${p} of ${pageCount}`,pageW-margin,291,{align:'right'});
+    }
+
+    doc.save(`physioguide-${(currentPlan.planTitle||'exercise-plan').toLowerCase().replace(/\s+/g,'-')}.pdf`);
+  }catch(e){
+    console.error(e);
+    alert('PDF generation failed. Please try again.');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='⬇ Download PDF';
+  }
+}
 </script>
 </body>
 </html>
